@@ -1,12 +1,12 @@
 import React from 'react';
 import type { TriggerProps } from '@rc-component/trigger';
-import ConfigProvider from '../../config-provider';
 
 import type { DropDownProps } from '..';
 import Dropdown from '..';
 import mountTest from '../../../tests/shared/mountTest';
 import rtlTest from '../../../tests/shared/rtlTest';
 import { act, fireEvent, render, waitFakeTimer } from '../../../tests/utils';
+import ConfigProvider from '../../config-provider';
 
 let triggerProps: TriggerProps;
 
@@ -349,5 +349,25 @@ describe('Dropdown', () => {
         '.ant-dropdown-menu-submenu-arrow .ant-dropdown-menu-submenu-arrow-icon',
       ),
     ).toHaveClass('anticon-left');
+  });
+  it('support classNames and styles', () => {
+    const testClassNames = {
+      root: 'test-root',
+      popup: 'test-popup',
+    };
+    const testStyles = {
+      root: { color: 'red' },
+      popup: { backgroundColor: 'blue' },
+    };
+    const { container } = render(
+      <Dropdown menu={{ items }} open classNames={testClassNames} styles={testStyles}>
+        <button type="button">button</button>
+      </Dropdown>,
+    );
+    const dropdown = container.querySelector('.ant-dropdown') as HTMLElement;
+    expect(dropdown).toHaveClass(testClassNames.root);
+    expect(dropdown).toHaveStyle(testStyles.root);
+    expect(dropdown).toHaveClass(testClassNames.popup);
+    expect(dropdown).toHaveStyle(testStyles.popup);
   });
 });

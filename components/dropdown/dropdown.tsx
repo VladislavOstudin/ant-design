@@ -1,13 +1,14 @@
 import * as React from 'react';
 import LeftOutlined from '@ant-design/icons/LeftOutlined';
 import RightOutlined from '@ant-design/icons/RightOutlined';
+import RcDropdown from '@rc-component/dropdown';
 import type { AlignType } from '@rc-component/trigger';
 import useEvent from '@rc-component/util/lib/hooks/useEvent';
 import useMergedState from '@rc-component/util/lib/hooks/useMergedState';
 import omit from '@rc-component/util/lib/omit';
 import classNames from 'classnames';
-import RcDropdown from '@rc-component/dropdown';
 
+import useMergeSemantic from '../_util/hooks/useMergeSemantic';
 import { useZIndex } from '../_util/hooks/useZIndex';
 import isPrimitive from '../_util/isPrimitive';
 import type { AdjustOverflow } from '../_util/placements';
@@ -16,7 +17,7 @@ import genPurePanel from '../_util/PurePanel';
 import { cloneElement } from '../_util/reactNode';
 import { devUseWarning } from '../_util/warning';
 import zIndexContext from '../_util/zindexContext';
-import { ConfigContext } from '../config-provider';
+import { useComponentConfig } from '../config-provider/context';
 import useCSSVarCls from '../config-provider/hooks/useCSSVarCls';
 import type { MenuProps } from '../menu';
 import Menu from '../menu';
@@ -42,7 +43,11 @@ export type DropdownArrowOptions = {
   pointAtCenter?: boolean;
 };
 
+type SemanticName = 'root' | 'popup';
+
 export interface DropdownProps {
+  classNames?: Partial<Record<SemanticName, string>>;
+  styles?: Partial<Record<SemanticName, React.CSSProperties>>;
   menu?: MenuProps;
   autoFocus?: boolean;
   arrow?: boolean | DropdownArrowOptions;
@@ -95,13 +100,23 @@ const Dropdown: CompoundedComponent = (props) => {
     autoAdjustOverflow = true,
     placement = '',
     transitionName,
+    classNames: dropdownClassNames,
+    styles,
   } = props;
   const {
-    getPopupContainer: getContextPopupContainer,
     getPrefixCls,
     direction,
-    dropdown,
-  } = React.useContext(ConfigContext);
+    getPopupContainer: getContextPopupContainer,
+    className: contextClassName,
+    style: contextStyle,
+    classNames: contextClassNames,
+    styles: contextStyles,
+  } = useComponentConfig('dropdown');
+
+  const [mergedClassNames, mergedStyles] = useMergeSemantic(
+    [contextClassNames, dropdownClassNames],
+    [contextStyles, styles],
+  );
 
   // Warning for deprecated usage
   const warning = devUseWarning('Dropdown');
@@ -185,7 +200,9 @@ const Dropdown: CompoundedComponent = (props) => {
     hashId,
     cssVarCls,
     rootCls,
-    dropdown?.className,
+    contextClassName,
+    mergedClassNames?.root,
+    mergedClassNames?.popup,
     { [`${prefixCls}-rtl`]: direction === 'rtl' },
   );
 
@@ -270,7 +287,13 @@ const Dropdown: CompoundedComponent = (props) => {
       overlay={renderOverlay}
       placement={memoPlacement}
       onVisibleChange={onInnerOpenChange}
-      overlayStyle={{ ...dropdown?.style, ...overlayStyle, zIndex }}
+      overlayStyle={{
+        ...contextStyle,
+        ...mergedStyles?.root,
+        ...mergedStyles?.popup,
+        ...overlayStyle,
+        zIndex,
+      }}
     >
       {dropdownTrigger}
     </RcDropdown>
